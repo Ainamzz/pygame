@@ -3,18 +3,17 @@ import psycopg2
 import random
 from datetime import datetime
 
-# Подключение к базе данных
 conn = psycopg2.connect(
-    dbname="snake",  # Название базы данных
-    user="postgres",  # Пользователь
-    password="postgres",  # Пароль
-    host="localhost",  # Адрес хоста
-    port="5432"  # Порт
+    dbname="snake",  
+    user="postgres",  
+    password="postgres",  
+    host="localhost",  
+    port="5432"  
 )
 
 cursor = conn.cursor()
 
-# Создание таблиц, если они не существуют
+
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -34,7 +33,7 @@ cursor.execute('''
 
 conn.commit()
 
-# Функция для получения или создания пользователя
+
 def get_or_create_user(username):
     cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
     user = cursor.fetchone()
@@ -48,12 +47,12 @@ def get_or_create_user(username):
     level, score = cursor.fetchone()
     return user_id, level or 1, score or 0
 
-# Функция для сохранения текущего счета в базу данных
+
 def save_score(user_id, level, score):
     cursor.execute('INSERT INTO user_scores (user_id, level, score) VALUES (%s, %s, %s)', (user_id, level, score))
     conn.commit()
 
-# Инициализация Pygame
+
 pygame.init()
 
 WIDTH, HEIGHT = 600, 400
@@ -62,19 +61,19 @@ pygame.display.set_caption("Snake Game")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 24)
 
-# Получение или создание пользователя
+
 username = input("Input username: ")
 user_id, level, previous_score = get_or_create_user(username)
 print(f"Hello, {username}! Current level: {level}, Previous score: {previous_score}")
 
-# Настройки уровней
+
 levels = {
     1: {"speed": 10, "walls": []},
     2: {"speed": 15, "walls": [(200, 200, 200, 10), (100, 100, 10, 200)]},
     3: {"speed": 20, "walls": [(150, 150, 300, 10), (150, 250, 300, 10)]},
 }
 
-# Установим начальные параметры
+
 speed = levels[level]["speed"]
 walls = levels[level]["walls"]
 snake = [(100, 50)]
@@ -83,12 +82,12 @@ food = (random.randint(0, WIDTH // 10 - 1) * 10, random.randint(0, HEIGHT // 10 
 score = 0
 running = True
 
-# Главный игровой цикл
+
 while running:
-    clock.tick(speed)  # Ограничиваем скорость игры в зависимости от уровня
+    clock.tick(speed)  
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            save_score(user_id, level, score)  # Сохраняем счет при выходе
+            save_score(user_id, level, score)  
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP and direction != (0, 10):
@@ -99,12 +98,12 @@ while running:
                 direction = (-10, 0)
             elif event.key == pygame.K_RIGHT and direction != (-10, 0):
                 direction = (10, 0)
-            elif event.key == pygame.K_p:  # Клавиша для паузы
+            elif event.key == pygame.K_p:  
                 print("Game is on pause. Saved.")
-                save_score(user_id, level, score)  # Сохраняем текущий счет
+                save_score(user_id, level, score)  
                 running = False
 
-    # Двигаем змею
+    
     head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
     snake.insert(0, head)
 
@@ -118,33 +117,32 @@ while running:
     else:
         snake.pop()
 
-    # Проверка на столкновение с границей экрана или с телом змеи
+    
     if head in snake[1:] or head[0] < 0 or head[0] >= WIDTH or head[1] < 0 or head[1] >= HEIGHT:
         print("Game Over!")
-        save_score(user_id, level, score)  # Сохраняем счет
+        save_score(user_id, level, score)  
         break
 
-    # Проверка на столкновение со стенами
+    
     for wall in walls:
         if pygame.Rect(*wall).collidepoint(head):
             print("Hit the wall!")
-            save_score(user_id, level, score)  # Сохраняем счет
+            save_score(user_id, level, score)  
             running = False
             break
 
-    # Отображаем все элементы игры
-    win.fill((0, 0, 0))  # Заливаем экран черным цветом
+    
+    win.fill((0, 0, 0))  
     for seg in snake:
-        pygame.draw.rect(win, (0, 255, 0), (*seg, 10, 10))  # Рисуем тело змеи
-    pygame.draw.rect(win, (255, 0, 0), (*food, 10, 10))  # Рисуем еду
+        pygame.draw.rect(win, (0, 255, 0), (*seg, 10, 10)) 
+    pygame.draw.rect(win, (255, 0, 0), (*food, 10, 10))  
     for wall in walls:
-        pygame.draw.rect(win, (100, 100, 100), wall)  # Рисуем стены
-
-    # Отображаем счет и уровень
+        pygame.draw.rect(win, (100, 100, 100), wall)  
+    
     score_text = font.render(f"Score: {score}  Level: {level}", True, (255, 255, 255))
     win.blit(score_text, (10, 10))
 
-    pygame.display.update()  # Обновляем экран
+    pygame.display.update()  
 
 pygame.quit()
 cursor.close()
